@@ -1037,6 +1037,20 @@
         <!-- Canvas: recibe los frames pintados manualmente -->
         <canvas id="scrollCanvas"></canvas>
 
+        <!-- Overlay de carga -->
+        <div id="videoLoader" style="
+          position:absolute; inset:0; z-index:20;
+          display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:12px; background:rgba(8,8,10,0.85);
+          transition: opacity 0.4s ease;
+        ">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="animation:spin 0.9s linear infinite">
+            <circle cx="14" cy="14" r="11" stroke="#1F1F23" stroke-width="2"/>
+            <path d="M14 3 A11 11 0 0 1 25 14" stroke="#00FF66" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.3)">Cargando sistema</span>
+        </div>
+
         <div class="video-overlay-badge" id="videoBadge">
           <span class="status-dot"></span>
           Escaneando sistema
@@ -1300,16 +1314,29 @@
     const section = document.getElementById('videoScroll');
     const fill    = document.getElementById('videoFill');
     const badge   = document.getElementById('videoBadge');
+    const loader  = document.getElementById('videoLoader');
     const VIDEO_START = 2;
     const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+
+    // Servir versión móvil (3.3 MB, 480p) o desktop (15.8 MB, 720p)
+    const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    video.src = isMobile ? 'assets/hero_mobile.mp4' : 'assets/hero_scrub.mp4';
 
     let videoDuration = 0;
     let targetTime    = VIDEO_START;
     let isSeeking     = false;
     let videoUnlocked = false;
+    let firstPainted  = false;
 
     // Altura provisional inmediata — móvil no tiene loadedmetadata hasta interacción
     section.style.height = (window.innerHeight * 4) + 'px';
+
+    function hideLoader() {
+      if (firstPainted) return;
+      firstPainted = true;
+      loader.style.opacity = '0';
+      setTimeout(() => { loader.style.display = 'none'; }, 420);
+    }
 
     function onMetadata() {
       if (!video.duration || video.duration === Infinity) return;
@@ -1346,7 +1373,10 @@
     window.addEventListener('scroll',     unlockVideo, { once: true, passive: true });
 
     function paint() {
-      if (canvas.width > 0) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (canvas.width > 0) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        hideLoader(); // ocultar spinner al primer frame real
+      }
     }
 
     function doSeek() {
