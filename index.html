@@ -883,33 +883,15 @@
     }
 
     @media (max-width: 768px) {
-      /* Móvil: la sección ya no es un scroll largo, fluye normal */
+      /* Móvil: sección normal (sin scroll largo), canvas reproduce el video */
       .video-scroll-section { height: auto !important; }
 
       .video-scroll-sticky {
-        position: relative !important; /* quitar sticky */
+        position: relative !important;
         height: auto !important;
         padding: 60px 16px 0;
         align-items: flex-start;
       }
-
-      /* Mostrar el video como elemento normal */
-      #scrollVideo {
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        aspect-ratio: 16 / 9;
-        display: block !important;
-      }
-
-      /* Canvas no se usa en móvil */
-      #scrollCanvas { display: none !important; }
-
-      /* Ocultar decoraciones del scrubbing */
-      .video-overlay-badge,
-      .video-progress-bar { display: none; }
 
       .video-frame {
         height: auto;
@@ -917,6 +899,10 @@
         width: 100%;
         max-height: none;
       }
+
+      /* Sin badge ni barra de progreso en móvil */
+      .video-overlay-badge,
+      .video-progress-bar { display: none; }
       .video-ruler { display: none; }
     }
 
@@ -1052,14 +1038,12 @@
         <div class="vf-corner bl"></div>
         <div class="vf-corner br"></div>
 
-        <!-- Video oculto: autoplay+loop desbloquea el decodificador en iOS -->
+        <!-- Video oculto: canvas pinta los frames, sin UI nativa -->
         <video
           id="scrollVideo"
           src="assets/hero_scrub.mp4"
           muted
           autoplay
-          loop
-          controls="false"
           playsinline="true"
           webkit-playsinline="true"
           preload="auto"
@@ -1378,8 +1362,34 @@
     video.load();
 
     if (isMobile) {
-      // ── MÓVIL: video normal que se reproduce solo ──
+      // ── MÓVIL: canvas reproduce el video como GIF (sin controles, sin interacción) ──
+      video.loop = false; // una sola pasada
       loader.style.display = 'none';
+
+      // Ajustar canvas al tamaño real del video
+      video.addEventListener('loadedmetadata', () => {
+        canvas.width  = video.videoWidth  || 854;
+        canvas.height = video.videoHeight || 480;
+      });
+
+      function drawMobile() {
+        if (video.readyState >= 2 && canvas.width > 0) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      // timeupdate: canal de pintura universal
+      video.addEventListener('timeupdate', drawMobile);
+
+      // rVFC: mayor precisión si el navegador lo soporta
+      if (hasRVFC) {
+        function mobileRVFC() {
+          drawMobile();
+          if (!video.ended) video.requestVideoFrameCallback(mobileRVFC);
+        }
+        video.requestVideoFrameCallback(mobileRVFC);
+      }
+
       video.play().catch(() => {});
 
     } else {
