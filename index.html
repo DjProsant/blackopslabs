@@ -35,6 +35,7 @@ nav.scrolled{padding:13px 56px;background:rgba(8,8,8,.94);backdrop-filter:blur(2
 /* ── SCROLL VIDEO HERO ── */
 .scroll-video-hero{height:500vh;position:relative}
 .scroll-video-sticky{position:sticky;top:0;height:100vh;width:100%;overflow:hidden}
+.scroll-video-sticky::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:70px;background:#000;z-index:3;pointer-events:none}
 .scroll-video-sticky video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
 .hero-overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;background:rgba(0,0,0,.48)}
 .hero-logo-img{position:absolute;top:calc(50% - 220px);left:50%;transform:translateX(-50%);width:190px;z-index:3;mix-blend-mode:screen;filter:brightness(1.3) contrast(1.1);animation:fadeUp 1.2s .2s both;pointer-events:none}
