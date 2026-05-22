@@ -884,14 +884,16 @@
 
     @media (max-width: 768px) {
       .video-scroll-sticky {
-        padding: 80px 16px; /* más margen vertical = borde visible + frame más pequeño */
-        align-items: center;
+        padding: 60px 12px 0; /* 60px = altura del nav fijo, sin padding abajo */
+        align-items: stretch;  /* el frame se estira para llenar el alto disponible */
+        flex-direction: column;
       }
       .video-frame {
-        height: auto;          /* deja de estirar verticalmente */
-        aspect-ratio: 16 / 9; /* proporciones exactas del video */
+        flex: 1;               /* ocupa todo el viewport menos el nav */
         width: 100%;
-        max-height: 56vw;      /* tope: no más alto que 56% del ancho (≈ 16:9) */
+        height: auto;
+        max-height: none;      /* sin límite: llena la pantalla */
+        aspect-ratio: unset;   /* el canvas cubre el frame completo */
       }
       .video-ruler { display: none; }
     }
