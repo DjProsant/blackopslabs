@@ -1118,22 +1118,22 @@
 
         <div class="hero-metrics reveal d4">
           <div class="metric">
-            <span class="metric-value">+340%</span>
+            <span class="metric-value counter" data-target="340" data-prefix="+" data-suffix="%">+0%</span>
             <span class="metric-label">Velocidad de carga</span>
           </div>
           <div class="metric-divider"></div>
           <div class="metric">
-            <span class="metric-value">−60%</span>
+            <span class="metric-value counter" data-target="60" data-prefix="−" data-suffix="%">−0%</span>
             <span class="metric-label">Fugas de conversión</span>
           </div>
           <div class="metric-divider"></div>
           <div class="metric">
-            <span class="metric-value">100%</span>
+            <span class="metric-value counter" data-target="100" data-prefix="" data-suffix="%">0%</span>
             <span class="metric-label">Confidencialidad</span>
           </div>
           <div class="metric-divider"></div>
           <div class="metric">
-            <span class="metric-value">48h</span>
+            <span class="metric-value counter" data-target="48" data-prefix="" data-suffix="h">0h</span>
             <span class="metric-label">Diagnóstico</span>
           </div>
         </div>
@@ -1345,6 +1345,39 @@
 
     // Fallback: si en 5s algún elemento sigue oculto, lo fuerza visible
     setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 5000);
+
+    // ── CONTADOR ANIMADO ──
+    function animateCounter(el) {
+      if (el.dataset.animated) return;
+      el.dataset.animated = '1';
+      const target   = parseInt(el.dataset.target, 10);
+      const prefix   = el.dataset.prefix || '';
+      const suffix   = el.dataset.suffix || '';
+      const duration = 1800;
+      const start    = performance.now();
+      function tick(now) {
+        const t    = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3); // ease-out cúbico
+        el.textContent = prefix + Math.round(ease * target) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    const metricsEl = document.querySelector('.hero-metrics');
+    if (metricsEl) {
+      const counters = metricsEl.querySelectorAll('.counter');
+      // Observar cuando .visible se añade al contenedor de métricas
+      const mo = new MutationObserver(() => {
+        if (metricsEl.classList.contains('visible')) {
+          counters.forEach(animateCounter);
+          mo.disconnect();
+        }
+      });
+      mo.observe(metricsEl, { attributes: true, attributeFilter: ['class'] });
+      // Por si ya está visible al cargar
+      if (metricsEl.classList.contains('visible')) counters.forEach(animateCounter);
+    }
 
     // ── VIDEO SCROLL SCRUBBING — iOS WebKit / rAF loop ──
     const video   = document.getElementById('scrollVideo');
