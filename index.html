@@ -883,17 +883,39 @@
     }
 
     @media (max-width: 768px) {
+      /* Móvil: la sección ya no es un scroll largo, fluye normal */
+      .video-scroll-section { height: auto !important; }
+
       .video-scroll-sticky {
-        /* Altura exacta del video + nav: el sticky no ocupa más espacio del necesario */
-        height: calc(56.25vw + 76px); /* 56.25vw = 16:9, 60px nav + 16px padding */
-        padding: 60px 16px 16px;
+        position: relative !important; /* quitar sticky */
+        height: auto !important;
+        padding: 60px 16px 0;
         align-items: flex-start;
       }
+
+      /* Mostrar el video como elemento normal */
+      #scrollVideo {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        aspect-ratio: 16 / 9;
+        display: block !important;
+      }
+
+      /* Canvas no se usa en móvil */
+      #scrollCanvas { display: none !important; }
+
+      /* Ocultar decoraciones del scrubbing */
+      .video-overlay-badge,
+      .video-progress-bar { display: none; }
+
       .video-frame {
         height: auto;
         aspect-ratio: 16 / 9;
         width: 100%;
-        max-height: 56vw;
+        max-height: none;
       }
       .video-ruler { display: none; }
     }
@@ -1355,122 +1377,113 @@
     video.src = isMobile ? 'assets/hero_mobile.mp4' : 'assets/hero_scrub.mp4';
     video.load();
 
-    // Desbloquear decodificador iOS inmediatamente (autoplay+loop en el elemento
-    // también ayuda, pero play().then(pause()) lo garantiza en todos los casos)
-    const _unlock = video.play();
-    if (_unlock && _unlock.then) {
-      _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
-             .catch(() => { video.currentTime = VIDEO_START; });
-    }
+    if (isMobile) {
+      // ── MÓVIL: video normal que se reproduce solo ──
+      loader.style.display = 'none';
+      video.play().catch(() => {});
 
-    let videoDuration = 0;
-    let targetTime    = VIDEO_START;
-    let isSeeking     = false;
-    let firstPainted  = false;
-    let rafId         = null;
-
-    // Móvil: altura compacta para que el hero aparezca pronto tras el video
-    const stickyEl = document.querySelector('.video-scroll-sticky');
-    const stickyH  = stickyEl ? stickyEl.offsetHeight : window.innerHeight;
-    section.style.height = isMobile
-      ? (stickyH + window.innerHeight * 0.6) + 'px'
-      : (window.innerHeight * 4) + 'px';
-
-    function hideLoader() {
-      if (firstPainted) return;
-      firstPainted = true;
-      loader.style.opacity = '0';
-      setTimeout(() => { loader.style.display = 'none'; }, 420);
-    }
-
-    function onMetadata() {
-      if (!video.duration || video.duration === Infinity) return;
-      videoDuration = video.duration;
-      canvas.width  = video.videoWidth  || 1280;
-      canvas.height = video.videoHeight || 720;
-      const usable  = videoDuration - VIDEO_START;
-      section.style.height = isMobile
-        ? (stickyH + window.innerHeight * 0.6) + 'px'
-        : Math.max(window.innerHeight * 3, usable * 220) + 'px';
-      video.currentTime = VIDEO_START;
-    }
-
-    video.addEventListener('loadedmetadata', onMetadata);
-    video.addEventListener('loadeddata',     onMetadata);
-
-    function doSeek() {
-      isSeeking = true;
-      try {
-        if (video.fastSeek) video.fastSeek(targetTime);
-        else                video.currentTime = targetTime;
-      } catch (e) {
-        video.currentTime = targetTime;
+    } else {
+      // ── DESKTOP: scroll scrubbing completo ──
+      const _unlock = video.play();
+      if (_unlock && _unlock.then) {
+        _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
+               .catch(() => { video.currentTime = VIDEO_START; });
       }
-    }
 
-    // rAF loop — canal principal en iOS Safari donde 'seeked' es lento o mudo
-    // Si readyState < 2 (no hay datos del frame), el canvas NO se borra:
-    // retiene el último frame pintado con éxito hasta que los datos lleguen
-    function startRenderLoop() {
-      if (rafId) return;
-      function loop() {
-        if (video.readyState >= 2 && canvas.width > 0) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          hideLoader();
-        }
-        if (Math.abs(targetTime - video.currentTime) > 0.033) {
-          if (!isSeeking) doSeek();
-          rafId = requestAnimationFrame(loop);
-        } else {
-          isSeeking = false;
-          rafId = null;
+      let videoDuration = 0;
+      let targetTime    = VIDEO_START;
+      let isSeeking     = false;
+      let firstPainted  = false;
+      let rafId         = null;
+
+      section.style.height = (window.innerHeight * 4) + 'px';
+
+      function hideLoader() {
+        if (firstPainted) return;
+        firstPainted = true;
+        loader.style.opacity = '0';
+        setTimeout(() => { loader.style.display = 'none'; }, 420);
+      }
+
+      function onMetadata() {
+        if (!video.duration || video.duration === Infinity) return;
+        videoDuration = video.duration;
+        canvas.width  = video.videoWidth  || 1280;
+        canvas.height = video.videoHeight || 720;
+        const usable  = videoDuration - VIDEO_START;
+        section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
+        video.currentTime = VIDEO_START;
+      }
+
+      video.addEventListener('loadedmetadata', onMetadata);
+      video.addEventListener('loadeddata',     onMetadata);
+
+      function doSeek() {
+        isSeeking = true;
+        try {
+          if (video.fastSeek) video.fastSeek(targetTime);
+          else                video.currentTime = targetTime;
+        } catch (e) {
+          video.currentTime = targetTime;
         }
       }
-      rafId = requestAnimationFrame(loop);
-    }
 
-    // timeupdate: canal adicional (iOS lo dispara incluso cuando rAF está limitado)
-    video.addEventListener('timeupdate', () => {
-      if (video.readyState >= 2 && canvas.width > 0) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        hideLoader();
-      }
-      startRenderLoop();
-    });
-
-    // rVFC: máxima precisión cuando está disponible (Chrome, Safari 15.4+)
-    if (hasRVFC) {
-      function scheduleRVFC() {
-        video.requestVideoFrameCallback(() => {
+      function startRenderLoop() {
+        if (rafId) return;
+        function loop() {
           if (video.readyState >= 2 && canvas.width > 0) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             hideLoader();
           }
-          if (isSeeking) scheduleRVFC();
-        });
+          if (Math.abs(targetTime - video.currentTime) > 0.033) {
+            if (!isSeeking) doSeek();
+            rafId = requestAnimationFrame(loop);
+          } else {
+            isSeeking = false;
+            rafId = null;
+          }
+        }
+        rafId = requestAnimationFrame(loop);
       }
-      video.addEventListener('seeking', scheduleRVFC, { once: true });
-      video.addEventListener('seeking', () => { if (!isSeeking) scheduleRVFC(); });
+
+      video.addEventListener('timeupdate', () => {
+        if (video.readyState >= 2 && canvas.width > 0) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          hideLoader();
+        }
+        startRenderLoop();
+      });
+
+      if (hasRVFC) {
+        function scheduleRVFC() {
+          video.requestVideoFrameCallback(() => {
+            if (video.readyState >= 2 && canvas.width > 0) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              hideLoader();
+            }
+            if (isSeeking) scheduleRVFC();
+          });
+        }
+        video.addEventListener('seeking', scheduleRVFC, { once: true });
+        video.addEventListener('seeking', () => { if (!isSeeking) scheduleRVFC(); });
+      }
+
+      function onScroll() {
+        if (!videoDuration) return;
+        const rect     = section.getBoundingClientRect();
+        const sectionH = section.offsetHeight;
+        const vh       = window.innerHeight;
+        const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
+        const usable   = videoDuration - VIDEO_START;
+        targetTime = VIDEO_START + progress * usable;
+        fill.style.width = (progress * 100) + '%';
+        badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
+        if (!isSeeking) doSeek();
+        startRenderLoop();
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
     }
-
-    function onScroll() {
-      if (!videoDuration) return;
-
-      const rect     = section.getBoundingClientRect();
-      const sectionH = section.offsetHeight;
-      const vh       = window.innerHeight;
-      const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
-      const usable   = videoDuration - VIDEO_START;
-
-      targetTime = VIDEO_START + progress * usable;
-      fill.style.width = (progress * 100) + '%';
-      badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
-
-      if (!isSeeking) doSeek();
-      startRenderLoop();
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
 
     // Form submit feedback
     function handleSubmit(e) {
