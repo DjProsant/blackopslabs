@@ -884,16 +884,14 @@
 
     @media (max-width: 768px) {
       .video-scroll-sticky {
-        padding: 60px 12px 0; /* 60px = altura del nav fijo, sin padding abajo */
-        align-items: stretch;  /* el frame se estira para llenar el alto disponible */
-        flex-direction: column;
+        padding: 60px 16px 16px; /* 60px = nav, sin espacio vacío arriba */
+        align-items: flex-start; /* video pegado al top, no centrado */
       }
       .video-frame {
-        flex: 1;               /* ocupa todo el viewport menos el nav */
-        width: 100%;
         height: auto;
-        max-height: none;      /* sin límite: llena la pantalla */
-        aspect-ratio: unset;   /* el canvas cubre el frame completo */
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        max-height: 56vw;
       }
       .video-ruler { display: none; }
     }
