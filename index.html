@@ -160,6 +160,7 @@
       padding-top: 60px;
       border-bottom: 1px solid var(--border);
       position: relative;
+      z-index: 1;
     }
 
     .hero-inner {
@@ -366,6 +367,8 @@
     .operations {
       padding: 96px 0;
       border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
     }
 
     .cards-grid {
@@ -482,6 +485,8 @@
     .form-section {
       padding: 96px 0;
       border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
     }
 
     .form-container {
@@ -737,6 +742,7 @@
     /* VIDEO SCROLL SECTION */
     .video-scroll-section {
       position: relative;
+      z-index: 1;
       /* height set by JS */
     }
 
@@ -973,11 +979,11 @@
       .form-panel { padding: 36px 22px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
 
-      /* En móvil el contenido es siempre visible — sin animaciones reveal
-         que se rompen con el layout shift de la sección de video */
+      /* En móvil forzar todo visible — elimina dependencia de IntersectionObserver
+         y cualquier stacking context residual del sticky del video */
       .reveal {
         opacity: 1 !important;
-        transform: translateY(0) !important;
+        transform: none !important;
         transition: none !important;
       }
     }
@@ -1305,11 +1311,17 @@
   <script>
     // ── SCROLL REVEAL ──
     const revealEls = document.querySelectorAll('.reveal');
-    const isMobileDevice = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    // Detecta móvil/touch incluyendo iOS en "Solicitar sitio de escritorio"
+    // donde el UA no lleva "Mobi" pero navigator.maxTouchPoints > 0
+    const isMobileDevice = window.innerWidth <= 768
+      || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 0 && /Mac/.test(navigator.platform));
 
     if (isMobileDevice) {
-      // Móvil: todo visible de inmediato, sin depender de IntersectionObserver
+      // Inmediato: sin IntersectionObserver — el sticky del video lo confunde en iOS
       revealEls.forEach(el => el.classList.add('visible'));
+      // Fallback a 500ms por si el layout shift del video afecta el primer tick
+      setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 500);
     } else {
       // Desktop: animaciones normales con IntersectionObserver
       const io = new IntersectionObserver((entries) => {
@@ -1318,10 +1330,8 @@
       revealEls.forEach(el => io.observe(el));
     }
 
-    // Fallback nuclear: si en 3s algo sigue invisible, forzar visible
-    setTimeout(() => {
-      revealEls.forEach(el => el.classList.add('visible'));
-    }, 3000);
+    // Fallback nuclear: cualquier elemento que siga invisible a los 3s
+    setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 3000);
 
     // ── VIDEO SCROLL SCRUBBING — iOS WebKit / rAF loop ──
     const video   = document.getElementById('scrollVideo');
