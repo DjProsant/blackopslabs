@@ -973,10 +973,12 @@
       .form-panel { padding: 36px 22px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
 
-      /* Reveals más rápidos y con menos desplazamiento en móvil */
+      /* En móvil el contenido es siempre visible — sin animaciones reveal
+         que se rompen con el layout shift de la sección de video */
       .reveal {
-        transform: translateY(8px);
-        transition: opacity 0.4s ease, transform 0.4s ease;
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        transition: none !important;
       }
     }
 
@@ -1300,11 +1302,23 @@
   <script>
     // ── SCROLL REVEAL ──
     const revealEls = document.querySelectorAll('.reveal');
-    // threshold:0 = dispara en cuanto entra 1px — sin rootMargin restrictivo
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0 });
-    revealEls.forEach(el => io.observe(el));
+    const isMobileDevice = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+    if (isMobileDevice) {
+      // Móvil: todo visible de inmediato, sin depender de IntersectionObserver
+      revealEls.forEach(el => el.classList.add('visible'));
+    } else {
+      // Desktop: animaciones normales con IntersectionObserver
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      }, { threshold: 0 });
+      revealEls.forEach(el => io.observe(el));
+    }
+
+    // Fallback nuclear: si en 3s algo sigue invisible, forzar visible
+    setTimeout(() => {
+      revealEls.forEach(el => el.classList.add('visible'));
+    }, 3000);
 
     // ── VIDEO SCROLL SCRUBBING — BIDIRECCIONAL + MOBILE FIX ──
     const video   = document.getElementById('scrollVideo');
@@ -1317,7 +1331,7 @@
     const VIDEO_START = 2;
     const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
 
-    const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isMobile = isMobileDevice; // definido arriba en el bloque de reveal
     video.src = isMobile ? 'assets/hero_mobile.mp4' : 'assets/hero_scrub.mp4';
     video.load(); // fuerza descarga inmediata (iOS ignora preload="auto")
 
