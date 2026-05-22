@@ -884,8 +884,10 @@
 
     @media (max-width: 768px) {
       .video-scroll-sticky {
-        padding: 60px 16px 16px; /* 60px = nav, sin espacio vacío arriba */
-        align-items: flex-start; /* video pegado al top, no centrado */
+        /* Altura exacta del video + nav: el sticky no ocupa más espacio del necesario */
+        height: calc(56.25vw + 76px); /* 56.25vw = 16:9, 60px nav + 16px padding */
+        padding: 60px 16px 16px;
+        align-items: flex-start;
       }
       .video-frame {
         height: auto;
@@ -1367,7 +1369,12 @@
     let firstPainted  = false;
     let rafId         = null;
 
-    section.style.height = (window.innerHeight * 4) + 'px';
+    // Móvil: altura compacta para que el hero aparezca pronto tras el video
+    const stickyEl = document.querySelector('.video-scroll-sticky');
+    const stickyH  = stickyEl ? stickyEl.offsetHeight : window.innerHeight;
+    section.style.height = isMobile
+      ? (stickyH + window.innerHeight * 0.6) + 'px'
+      : (window.innerHeight * 4) + 'px';
 
     function hideLoader() {
       if (firstPainted) return;
@@ -1382,7 +1389,9 @@
       canvas.width  = video.videoWidth  || 1280;
       canvas.height = video.videoHeight || 720;
       const usable  = videoDuration - VIDEO_START;
-      section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
+      section.style.height = isMobile
+        ? (stickyH + window.innerHeight * 0.6) + 'px'
+        : Math.max(window.innerHeight * 3, usable * 220) + 'px';
       video.currentTime = VIDEO_START;
     }
 
