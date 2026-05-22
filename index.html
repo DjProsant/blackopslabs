@@ -1298,14 +1298,13 @@
   </footer>
 
   <script>
-    // Scroll reveal
+    // ── SCROLL REVEAL ──
     const revealEls = document.querySelectorAll('.reveal');
+    // threshold:0 = dispara en cuanto entra 1px — sin rootMargin restrictivo
     const io = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+    }, { threshold: 0 });
     revealEls.forEach(el => io.observe(el));
-
-    // Hero text se revela al entrar en viewport (está debajo del video)
 
     // ── VIDEO SCROLL SCRUBBING — BIDIRECCIONAL + MOBILE FIX ──
     const video   = document.getElementById('scrollVideo');
@@ -1318,9 +1317,9 @@
     const VIDEO_START = 2;
     const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
 
-    // Servir versión móvil (3.3 MB, 480p) o desktop (15.8 MB, 720p)
     const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
     video.src = isMobile ? 'assets/hero_mobile.mp4' : 'assets/hero_scrub.mp4';
+    video.load(); // fuerza descarga inmediata (iOS ignora preload="auto")
 
     let videoDuration = 0;
     let targetTime    = VIDEO_START;
@@ -1328,7 +1327,6 @@
     let videoUnlocked = false;
     let firstPainted  = false;
 
-    // Altura provisional inmediata — móvil no tiene loadedmetadata hasta interacción
     section.style.height = (window.innerHeight * 4) + 'px';
 
     function hideLoader() {
@@ -1346,18 +1344,24 @@
       const usable  = videoDuration - VIDEO_START;
       section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
       video.currentTime = VIDEO_START;
+
+      // Re-observar todos los reveals tras el layout shift de la sección
+      setTimeout(() => {
+        revealEls.forEach(el => {
+          if (!el.classList.contains('visible')) {
+            io.unobserve(el);
+            io.observe(el);
+          }
+        });
+      }, 80);
     }
 
     video.addEventListener('loadedmetadata', onMetadata);
-    video.addEventListener('loadeddata',     onMetadata); // fallback Safari/iOS
+    video.addEventListener('loadeddata',     onMetadata);
 
-    // iOS bloquea el decoder hasta interacción del usuario.
-    // video.load() fuerza la descarga real (iOS ignora preload="auto").
-    // play()+pause() desbloquea el decoder para seeks sin restricción.
     function unlockVideo() {
       if (videoUnlocked) return;
       videoUnlocked = true;
-      video.load();
       const p = video.play();
       if (p && p.then) {
         p.then(() => {
@@ -1373,9 +1377,10 @@
     window.addEventListener('scroll',     unlockVideo, { once: true, passive: true });
 
     function paint() {
-      if (canvas.width > 0) {
+      // readyState >= 2 = HAVE_CURRENT_DATA: hay datos reales del frame actual
+      if (canvas.width > 0 && video.readyState >= 2) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        hideLoader(); // ocultar spinner al primer frame real
+        hideLoader();
       }
     }
 
