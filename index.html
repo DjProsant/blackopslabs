@@ -950,8 +950,9 @@
     /* REVEAL ANIMATION */
     .reveal {
       opacity: 0;
-      transform: translateY(18px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      transform: translateY(36px);
+      transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .reveal.visible {
@@ -979,13 +980,7 @@
       .form-panel { padding: 36px 22px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
 
-      /* En móvil forzar todo visible — elimina dependencia de IntersectionObserver
-         y cualquier stacking context residual del sticky del video */
-      .reveal {
-        opacity: 1 !important;
-        transform: none !important;
-        transition: none !important;
-      }
+      /* En móvil la animación corre igual — JS la activa via scroll nativo */
     }
 
     @media (max-width: 480px) {
@@ -1311,28 +1306,37 @@
   <script>
     // ── SCROLL REVEAL ──
     const revealEls = document.querySelectorAll('.reveal');
-    // Detecta móvil/touch incluyendo iOS en "Solicitar sitio de escritorio"
-    // donde el UA no lleva "Mobi" pero navigator.maxTouchPoints > 0
-    // maxTouchPoints > 1 detecta iPads (5 puntos) sin confundir trackpads de Mac (0-1)
     const isMobileDevice = window.innerWidth <= 768
       || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
       || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
 
+    // Activa los elementos que ya están en el viewport visible
+    function revealVisible() {
+      const vh = window.innerHeight;
+      revealEls.forEach(el => {
+        if (el.classList.contains('visible')) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top < vh - 40) el.classList.add('visible');
+      });
+    }
+
     if (isMobileDevice) {
-      // Inmediato: sin IntersectionObserver — el sticky del video lo confunde en iOS
-      revealEls.forEach(el => el.classList.add('visible'));
-      // Fallback a 500ms por si el layout shift del video afecta el primer tick
-      setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 500);
+      // Móvil: scroll-based (iOS IntersectionObserver se confunde con sección sticky)
+      // rAF garantiza que el browser pinta opacity:0 ANTES de hacer la transición
+      requestAnimationFrame(() => {
+        setTimeout(revealVisible, 80);
+      });
+      window.addEventListener('scroll', revealVisible, { passive: true });
     } else {
-      // Desktop: animaciones normales con IntersectionObserver
+      // Desktop: IntersectionObserver — dispara 60px antes de que el elemento llegue al borde
       const io = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-      }, { threshold: 0 });
+      }, { threshold: 0.05, rootMargin: '0px 0px -60px 0px' });
       revealEls.forEach(el => io.observe(el));
     }
 
-    // Fallback nuclear: cualquier elemento que siga invisible a los 3s
-    setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 3000);
+    // Fallback: si en 5s algún elemento sigue oculto, lo fuerza visible
+    setTimeout(() => { revealEls.forEach(el => el.classList.add('visible')); }, 5000);
 
     // ── VIDEO SCROLL SCRUBBING — iOS WebKit / rAF loop ──
     const video   = document.getElementById('scrollVideo');
