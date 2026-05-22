@@ -1027,13 +1027,16 @@
         <div class="vf-corner bl"></div>
         <div class="vf-corner br"></div>
 
-        <!-- Video oculto: solo decodifica, no se muestra -->
+        <!-- Video oculto: autoplay+loop desbloquea el decodificador en iOS -->
         <video
           id="scrollVideo"
           src="assets/hero_scrub.mp4"
           muted
-          playsinline
-          webkit-playsinline
+          autoplay
+          loop
+          controls="false"
+          playsinline="true"
+          webkit-playsinline="true"
           preload="auto"
         ></video>
         <!-- Canvas: recibe los frames pintados manualmente -->
@@ -1320,7 +1323,7 @@
       revealEls.forEach(el => el.classList.add('visible'));
     }, 3000);
 
-    // ── VIDEO SCROLL SCRUBBING — BIDIRECCIONAL + MOBILE FIX ──
+    // ── VIDEO SCROLL SCRUBBING — iOS WebKit / rAF loop ──
     const video   = document.getElementById('scrollVideo');
     const canvas  = document.getElementById('scrollCanvas');
     const ctx     = canvas.getContext('2d', { alpha: false });
@@ -1331,15 +1334,23 @@
     const VIDEO_START = 2;
     const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
 
-    const isMobile = isMobileDevice; // definido arriba en el bloque de reveal
+    const isMobile = isMobileDevice;
     video.src = isMobile ? 'assets/hero_mobile.mp4' : 'assets/hero_scrub.mp4';
-    video.load(); // fuerza descarga inmediata (iOS ignora preload="auto")
+    video.load();
+
+    // Desbloquear decodificador iOS inmediatamente (autoplay+loop en el elemento
+    // también ayuda, pero play().then(pause()) lo garantiza en todos los casos)
+    const _unlock = video.play();
+    if (_unlock && _unlock.then) {
+      _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
+             .catch(() => { video.currentTime = VIDEO_START; });
+    }
 
     let videoDuration = 0;
     let targetTime    = VIDEO_START;
     let isSeeking     = false;
-    let videoUnlocked = false;
     let firstPainted  = false;
+    let rafId         = null;
 
     section.style.height = (window.innerHeight * 4) + 'px';
 
@@ -1358,72 +1369,59 @@
       const usable  = videoDuration - VIDEO_START;
       section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
       video.currentTime = VIDEO_START;
-
-      // Re-observar todos los reveals tras el layout shift de la sección
-      setTimeout(() => {
-        revealEls.forEach(el => {
-          if (!el.classList.contains('visible')) {
-            io.unobserve(el);
-            io.observe(el);
-          }
-        });
-      }, 80);
     }
 
     video.addEventListener('loadedmetadata', onMetadata);
     video.addEventListener('loadeddata',     onMetadata);
 
-    function unlockVideo() {
-      if (videoUnlocked) return;
-      videoUnlocked = true;
-      const p = video.play();
-      if (p && p.then) {
-        p.then(() => {
-          video.pause();
-          video.currentTime = VIDEO_START;
-        }).catch(() => {
-          video.currentTime = VIDEO_START;
-        });
-      }
-    }
-
-    window.addEventListener('touchstart', unlockVideo, { once: true, passive: true });
-    window.addEventListener('scroll',     unlockVideo, { once: true, passive: true });
-
-    function paint() {
-      // readyState >= 2 = HAVE_CURRENT_DATA: hay datos reales del frame actual
-      if (canvas.width > 0 && video.readyState >= 2) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        hideLoader();
-      }
-    }
-
     function doSeek() {
       isSeeking = true;
       try {
         if (video.fastSeek) video.fastSeek(targetTime);
-        else                 video.currentTime = targetTime;
+        else                video.currentTime = targetTime;
       } catch (e) {
         video.currentTime = targetTime;
       }
     }
 
-    video.addEventListener('seeked', () => {
-      paint();
-      if (Math.abs(targetTime - video.currentTime) > 0.033) {
-        doSeek();
-      } else {
-        isSeeking = false;
+    // rAF loop — canal principal en iOS Safari donde 'seeked' es lento o mudo
+    // Si readyState < 2 (no hay datos del frame), el canvas NO se borra:
+    // retiene el último frame pintado con éxito hasta que los datos lleguen
+    function startRenderLoop() {
+      if (rafId) return;
+      function loop() {
+        if (video.readyState >= 2 && canvas.width > 0) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          hideLoader();
+        }
+        if (Math.abs(targetTime - video.currentTime) > 0.033) {
+          if (!isSeeking) doSeek();
+          rafId = requestAnimationFrame(loop);
+        } else {
+          isSeeking = false;
+          rafId = null;
+        }
       }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    // timeupdate: canal adicional (iOS lo dispara incluso cuando rAF está limitado)
+    video.addEventListener('timeupdate', () => {
+      if (video.readyState >= 2 && canvas.width > 0) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        hideLoader();
+      }
+      startRenderLoop();
     });
 
-    // timeupdate: fallback extra para móviles donde 'seeked' es lento
-    video.addEventListener('timeupdate', paint);
-
+    // rVFC: máxima precisión cuando está disponible (Chrome, Safari 15.4+)
     if (hasRVFC) {
       function scheduleRVFC() {
         video.requestVideoFrameCallback(() => {
-          paint();
+          if (video.readyState >= 2 && canvas.width > 0) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            hideLoader();
+          }
           if (isSeeking) scheduleRVFC();
         });
       }
@@ -1432,7 +1430,7 @@
     }
 
     function onScroll() {
-      if (!videoDuration) { unlockVideo(); return; }
+      if (!videoDuration) return;
 
       const rect     = section.getBoundingClientRect();
       const sectionH = section.offsetHeight;
@@ -1445,6 +1443,7 @@
       badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
 
       if (!isSeeking) doSeek();
+      startRenderLoop();
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
