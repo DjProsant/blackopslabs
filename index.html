@@ -204,11 +204,19 @@
       font-weight: 600;
       line-height: 1.08;
       letter-spacing: -0.03em;
-      color: var(--text-primary);
+      background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 28px;
     }
 
-    .hero-title .dim { color: var(--text-secondary); }
+    .hero-title .dim {
+      background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(226,232,240,0.35) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     .hero-subtitle {
       font-size: clamp(15px, 1.8vw, 18px);
@@ -373,10 +381,15 @@
       padding: 40px;
       position: relative;
       overflow: hidden;
-      transition: background 0.3s;
+      border: 1px solid var(--border);
+      transition: background 0.3s, border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .op-card:hover { background: #0F0F12; }
+    .op-card:hover {
+      background: #0F0F12;
+      border-color: var(--accent);
+      box-shadow: 0 0 24px var(--accent-glow), inset 0 0 24px rgba(0, 255, 102, 0.03);
+    }
 
     .op-card::before {
       content: '';
@@ -563,6 +576,12 @@
       transform: translateY(-50%);
       color: var(--text-tertiary);
       pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    /* :focus-within detecta cuando cualquier hijo del wrapper tiene foco */
+    .form-input-wrap:focus-within .input-icon {
+      color: var(--accent);
     }
 
     .form-input {
@@ -932,6 +951,12 @@
       .form-section { padding: 72px 0; }
       .form-panel { padding: 36px 22px; }
       .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+
+      /* Reveals más rápidos y con menos desplazamiento en móvil */
+      .reveal {
+        transform: translateY(8px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
     }
 
     @media (max-width: 480px) {
@@ -985,6 +1010,7 @@
           src="assets/hero_scrub.mp4"
           muted
           playsinline
+          webkit-playsinline
           preload="auto"
           style="display:none"
         ></video>
@@ -1247,7 +1273,7 @@
 
     // Hero text se revela al entrar en viewport (está debajo del video)
 
-    // ── VIDEO SCROLL SCRUBBING — BIDIRECCIONAL ──
+    // ── VIDEO SCROLL SCRUBBING — BIDIRECCIONAL + MOBILE FIX ──
     const video   = document.getElementById('scrollVideo');
     const canvas  = document.getElementById('scrollCanvas');
     const ctx     = canvas.getContext('2d', { alpha: false });
@@ -1260,16 +1286,44 @@
     let videoDuration = 0;
     let targetTime    = VIDEO_START;
     let isSeeking     = false;
+    let videoUnlocked = false;
 
-    video.addEventListener('loadedmetadata', () => {
+    // Altura provisional inmediata — móvil no tiene loadedmetadata hasta interacción
+    section.style.height = (window.innerHeight * 4) + 'px';
+
+    function onMetadata() {
+      if (!video.duration || video.duration === Infinity) return;
       videoDuration = video.duration;
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width  = video.videoWidth  || 1280;
+      canvas.height = video.videoHeight || 720;
       const usable  = videoDuration - VIDEO_START;
       section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
-      // Cargar primer frame
       video.currentTime = VIDEO_START;
-    });
+    }
+
+    video.addEventListener('loadedmetadata', onMetadata);
+    video.addEventListener('loadeddata',     onMetadata); // fallback Safari/iOS
+
+    // iOS bloquea el decoder hasta interacción del usuario.
+    // video.load() fuerza la descarga real (iOS ignora preload="auto").
+    // play()+pause() desbloquea el decoder para seeks sin restricción.
+    function unlockVideo() {
+      if (videoUnlocked) return;
+      videoUnlocked = true;
+      video.load();
+      const p = video.play();
+      if (p && p.then) {
+        p.then(() => {
+          video.pause();
+          video.currentTime = VIDEO_START;
+        }).catch(() => {
+          video.currentTime = VIDEO_START;
+        });
+      }
+    }
+
+    window.addEventListener('touchstart', unlockVideo, { once: true, passive: true });
+    window.addEventListener('scroll',     unlockVideo, { once: true, passive: true });
 
     function paint() {
       if (canvas.width > 0) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -1277,45 +1331,40 @@
 
     function doSeek() {
       isSeeking = true;
-      if (video.fastSeek) video.fastSeek(targetTime);
-      else                 video.currentTime = targetTime;
+      try {
+        if (video.fastSeek) video.fastSeek(targetTime);
+        else                 video.currentTime = targetTime;
+      } catch (e) {
+        video.currentTime = targetTime;
+      }
     }
 
-    // 'seeked' = frame decodificado y listo — señal primaria para ambas direcciones
     video.addEventListener('seeked', () => {
-      paint(); // dibuja en canvas al instante
+      paint();
       if (Math.abs(targetTime - video.currentTime) > 0.033) {
-        doSeek(); // el target se movió mientras buscábamos → perseguir
+        doSeek();
       } else {
         isSeeking = false;
       }
     });
 
-    // rVFC = capa extra: pinta en el momento exacto en que el compositor
-    // tiene el frame listo (más fino que 'seeked', suma suavidad)
     if (hasRVFC) {
       function scheduleRVFC() {
         video.requestVideoFrameCallback(() => {
           paint();
-          if (isSeeking) scheduleRVFC(); // mantener loop mientras se scrubba
+          if (isSeeking) scheduleRVFC();
         });
       }
-      // Arrancar el loop rVFC al primer seek
       video.addEventListener('seeking', scheduleRVFC, { once: true });
-      // Reactivar si el usuario vuelve a scrollear después de una pausa
-      video.addEventListener('seeking', () => {
-        if (!isSeeking) scheduleRVFC();
-      });
+      video.addEventListener('seeking', () => { if (!isSeeking) scheduleRVFC(); });
     }
 
-    // Scroll: solo calcula el target — NUNCA hace seeks directamente
     function onScroll() {
-      if (!videoDuration) return;
+      if (!videoDuration) { unlockVideo(); return; }
 
       const rect     = section.getBoundingClientRect();
       const sectionH = section.offsetHeight;
       const vh       = window.innerHeight;
-      // progress 0→1 bajando, 1→0 subiendo — funciona en ambas direcciones
       const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
       const usable   = videoDuration - VIDEO_START;
 
