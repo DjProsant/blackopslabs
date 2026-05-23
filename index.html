@@ -1810,18 +1810,9 @@
       video.play().catch(() => {});
 
     } else {
-      // ── DESKTOP: scroll scrubbing completo ──
-      const _unlock = video.play();
-      if (_unlock && _unlock.then) {
-        _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
-               .catch(() => { video.currentTime = VIDEO_START; });
-      }
-
+      // ── DESKTOP: scroll scrubbing — video all-keyframe, seek directo ──
       let videoDuration = 0;
-      let targetTime    = VIDEO_START;
-      let isSeeking     = false;
       let firstPainted  = false;
-      let rafId         = null;
 
       section.style.height = (window.innerHeight * 4) + 'px';
 
@@ -1830,6 +1821,28 @@
         firstPainted = true;
         loader.style.opacity = '0';
         setTimeout(() => { loader.style.display = 'none'; }, 420);
+      }
+
+      function draw() {
+        if (video.readyState >= 2 && canvas.width > 0) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          hideLoader();
+        }
+      }
+
+      // rVFC: bucle continuo — el navegador llama a draw() en cuanto
+      // tiene el frame decodificado, sin rAF extra ni timeupdate
+      if (hasRVFC) {
+        (function rVFCLoop() {
+          draw();
+          video.requestVideoFrameCallback(rVFCLoop);
+        })();
+      } else {
+        // Fallback navegadores sin rVFC: timeupdate + rAF mientras hay seek activo
+        video.addEventListener('timeupdate', draw);
+        video.addEventListener('seeking', function pumpRaf() {
+          (function raf() { draw(); if (video.seeking) requestAnimationFrame(raf); })();
+        });
       }
 
       function onMetadata() {
@@ -1845,54 +1858,11 @@
       video.addEventListener('loadedmetadata', onMetadata);
       video.addEventListener('loadeddata',     onMetadata);
 
-      function doSeek() {
-        isSeeking = true;
-        try {
-          if (video.fastSeek) video.fastSeek(targetTime);
-          else                video.currentTime = targetTime;
-        } catch (e) {
-          video.currentTime = targetTime;
-        }
-      }
-
-      function startRenderLoop() {
-        if (rafId) return;
-        function loop() {
-          if (video.readyState >= 2 && canvas.width > 0) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            hideLoader();
-          }
-          if (Math.abs(targetTime - video.currentTime) > 0.033) {
-            if (!isSeeking) doSeek();
-            rafId = requestAnimationFrame(loop);
-          } else {
-            isSeeking = false;
-            rafId = null;
-          }
-        }
-        rafId = requestAnimationFrame(loop);
-      }
-
-      video.addEventListener('timeupdate', () => {
-        if (video.readyState >= 2 && canvas.width > 0) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          hideLoader();
-        }
-        startRenderLoop();
-      });
-
-      if (hasRVFC) {
-        function scheduleRVFC() {
-          video.requestVideoFrameCallback(() => {
-            if (video.readyState >= 2 && canvas.width > 0) {
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              hideLoader();
-            }
-            if (isSeeking) scheduleRVFC();
-          });
-        }
-        video.addEventListener('seeking', scheduleRVFC, { once: true });
-        video.addEventListener('seeking', () => { if (!isSeeking) scheduleRVFC(); });
+      // Desbloquear autoplay y pausar — el scroll controla currentTime
+      const _unlock = video.play();
+      if (_unlock && _unlock.then) {
+        _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
+               .catch(() => { video.currentTime = VIDEO_START; });
       }
 
       function onScroll() {
@@ -1902,11 +1872,16 @@
         const vh       = window.innerHeight;
         const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
         const usable   = videoDuration - VIDEO_START;
-        targetTime = VIDEO_START + progress * usable;
+
+        // Seek directo — sin queue, sin isSeeking, sin fastSeek impreciso
+        // Con video all-keyframe el browser decodifica el frame exacto al instante
+        video.currentTime = VIDEO_START + progress * usable;
+
         fill.style.width = (progress * 100) + '%';
         badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
-        if (!isSeeking) doSeek();
-        startRenderLoop();
+
+        // Pinta el frame actual inmediatamente; rVFC actualizará cuando llegue el nuevo
+        draw();
       }
 
       window.addEventListener('scroll', onScroll, { passive: true });
