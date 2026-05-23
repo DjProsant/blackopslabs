@@ -775,7 +775,7 @@
     /* VIDEO SCROLL SECTION */
     .video-scroll-section {
       position: relative;
-      z-index: 1;
+      z-index: 6; /* por encima de las franjas scan (z 2-5) */
       /* height set by JS */
     }
 
@@ -1037,30 +1037,50 @@
       to { transform: rotate(360deg); }
     }
 
-    /* SCAN OVERLAY: zona ya escaneada — invierte todo lo que queda arriba */
-    .scan-overlay {
+    /* SCAN — capa 1: invierte (blanco sobre todo) */
+    .scan-overlay-invert {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 50%;
+      top: 0; left: 0; right: 0;
+      bottom: calc(50% + 13px);
       background: #ffffff;
       mix-blend-mode: difference;
       pointer-events: none;
-      z-index: 9997;
+      z-index: 2;
     }
 
-    /* SCAN LINE: frontera visible entre zona normal e invertida */
-    .scan-line {
+    /* SCAN — capa 2: coloriza verde (multiply sobre lo ya invertido) */
+    .scan-overlay-color {
       position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
+      bottom: calc(50% + 13px);
+      background: var(--accent);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Franja secundaria: marca el inicio del gap de vuelta a normal */
+    .scan-line-secondary {
+      position: fixed;
+      top: calc(50% - 13px);
+      left: 0; right: 0;
       height: 3px;
       background: var(--accent);
       pointer-events: none;
-      z-index: 9999;
+      z-index: 4;
+      opacity: 0.5;
+      box-shadow: 0 0 8px rgba(0, 255, 102, 0.5);
+    }
+
+    /* Franja principal */
+    .scan-line {
+      position: fixed;
+      top: 50%;
+      left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+      pointer-events: none;
+      z-index: 5;
       box-shadow:
         0 0 20px rgba(0, 255, 102, 0.9),
         0 0 60px rgba(0, 255, 102, 0.4),
@@ -1072,7 +1092,9 @@
 
   <div class="grid-bg"></div>
   <div class="radial-glow"></div>
-  <div class="scan-overlay" aria-hidden="true"></div>
+  <div class="scan-overlay-invert" aria-hidden="true"></div>
+  <div class="scan-overlay-color" aria-hidden="true"></div>
+  <div class="scan-line-secondary" aria-hidden="true"></div>
   <div class="scan-line" aria-hidden="true"></div>
 
   <!-- NAV -->
