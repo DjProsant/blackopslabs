@@ -1041,7 +1041,7 @@
     .scan-overlay-invert {
       position: fixed;
       top: 0; left: 0; right: 0;
-      bottom: calc(50% + 13px);
+      bottom: 75%;
       background: #ffffff;
       mix-blend-mode: difference;
       pointer-events: none;
@@ -1052,17 +1052,17 @@
     .scan-overlay-color {
       position: fixed;
       top: 0; left: 0; right: 0;
-      bottom: calc(50% + 13px);
+      bottom: 75%;
       background: var(--accent);
       mix-blend-mode: multiply;
       pointer-events: none;
       z-index: 3;
     }
 
-    /* Franja secundaria: marca el inicio del gap de vuelta a normal */
+    /* Franja secundaria: al 25%, devuelve a colores normales */
     .scan-line-secondary {
       position: fixed;
-      top: calc(50% - 13px);
+      top: 25%;
       left: 0; right: 0;
       height: 3px;
       background: var(--accent);
