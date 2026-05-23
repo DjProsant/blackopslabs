@@ -1044,15 +1044,19 @@
       transform: translateY(-50%);
       left: 0;
       right: 0;
-      height: 2px;
-      background: var(--accent);
+      height: 80px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 255, 102, 0.08) 20%,
+        var(--accent) 49%,
+        var(--accent) 51%,
+        rgba(0, 255, 102, 0.08) 80%,
+        transparent 100%
+      );
       mix-blend-mode: difference;
       pointer-events: none;
       z-index: 9999;
-      box-shadow:
-        0 0 18px rgba(0, 255, 102, 0.7),
-        0 0 60px rgba(0, 255, 102, 0.2),
-        0 0 120px rgba(0, 255, 102, 0.06);
     }
   </style>
 </head>
