@@ -1040,8 +1040,8 @@
     /* SCAN — capa 1: invierte (blanco sobre todo) */
     .scan-overlay-invert {
       position: fixed;
-      top: 40%; left: 0; right: 0;
-      bottom: 50%;
+      top: 15%; left: 0; right: 0;
+      bottom: 75%;
       background: #ffffff;
       mix-blend-mode: difference;
       pointer-events: none;
@@ -1051,8 +1051,8 @@
     /* SCAN — capa 2: coloriza verde (multiply sobre lo ya invertido) */
     .scan-overlay-color {
       position: fixed;
-      top: 40%; left: 0; right: 0;
-      bottom: 50%;
+      top: 15%; left: 0; right: 0;
+      bottom: 75%;
       background: var(--accent);
       mix-blend-mode: multiply;
       pointer-events: none;
@@ -1062,7 +1062,7 @@
     /* Franja secundaria: al 25%, devuelve a colores normales */
     .scan-line-secondary {
       position: fixed;
-      top: 40%;
+      top: 15%;
       left: 0; right: 0;
       height: 3px;
       background: var(--accent);
@@ -1075,7 +1075,7 @@
     /* Franja principal */
     .scan-line {
       position: fixed;
-      top: 50%;
+      top: 25%;
       left: 0; right: 0;
       height: 3px;
       background: var(--accent);
