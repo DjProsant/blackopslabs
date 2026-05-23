@@ -1036,12 +1036,31 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+
+    /* SCAN LINE */
+    .scan-line {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      mix-blend-mode: difference;
+      pointer-events: none;
+      z-index: 9999;
+      box-shadow:
+        0 0 18px rgba(0, 255, 102, 0.7),
+        0 0 60px rgba(0, 255, 102, 0.2),
+        0 0 120px rgba(0, 255, 102, 0.06);
+    }
   </style>
 </head>
 <body>
 
   <div class="grid-bg"></div>
   <div class="radial-glow"></div>
+  <div class="scan-line" aria-hidden="true"></div>
 
   <!-- NAV -->
   <nav>
