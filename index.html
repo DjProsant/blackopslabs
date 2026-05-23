@@ -1037,26 +1037,34 @@
       to { transform: rotate(360deg); }
     }
 
-    /* SCAN LINE */
+    /* SCAN OVERLAY: zona ya escaneada — invierte todo lo que queda arriba */
+    .scan-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 50%;
+      background: #ffffff;
+      mix-blend-mode: difference;
+      pointer-events: none;
+      z-index: 9997;
+    }
+
+    /* SCAN LINE: frontera visible entre zona normal e invertida */
     .scan-line {
       position: fixed;
       top: 50%;
       transform: translateY(-50%);
       left: 0;
       right: 0;
-      height: 80px;
-      background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(0, 255, 102, 0.08) 20%,
-        var(--accent) 49%,
-        var(--accent) 51%,
-        rgba(0, 255, 102, 0.08) 80%,
-        transparent 100%
-      );
-      mix-blend-mode: difference;
+      height: 3px;
+      background: var(--accent);
       pointer-events: none;
       z-index: 9999;
+      box-shadow:
+        0 0 20px rgba(0, 255, 102, 0.9),
+        0 0 60px rgba(0, 255, 102, 0.4),
+        0 0 120px rgba(0, 255, 102, 0.1);
     }
   </style>
 </head>
@@ -1064,6 +1072,7 @@
 
   <div class="grid-bg"></div>
   <div class="radial-glow"></div>
+  <div class="scan-overlay" aria-hidden="true"></div>
   <div class="scan-line" aria-hidden="true"></div>
 
   <!-- NAV -->
