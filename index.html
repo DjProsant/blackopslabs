@@ -1906,7 +1906,7 @@
     }
 
     // Form submit
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const empresa  = document.getElementById('empresa').value.trim();
@@ -1918,22 +1918,29 @@
       btn.disabled = true;
       btn.style.opacity = '0.72';
 
-      const subject = encodeURIComponent(`[Black Ops Labs] Diagnóstico solicitado — ${empresa}`);
-      const body = encodeURIComponent(
-        `Nueva solicitud de diagnóstico técnico\n\n` +
-        `Empresa: ${empresa}\n` +
-        `Plataforma: ${url}\n` +
-        `Email: ${email}\n` +
-        `WhatsApp: ${whatsapp || '—'}`
-      );
+      try {
+        const res = await fetch('https://formspree.io/f/xgoqllek', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ empresa, url, email, whatsapp: whatsapp || '—' })
+        });
 
-      setTimeout(() => {
-        window.location.href = `mailto:admin@blackopslabs.it.com?subject=${subject}&body=${body}`;
-        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5L5 10L11.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg> Diagnóstico Iniciado`;
+        if (res.ok) {
+          btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5L5 10L11.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg> Diagnóstico Iniciado`;
+          btn.style.opacity = '1';
+          btn.style.background = '#00cc52';
+          btn.style.boxShadow = '0 0 40px rgba(0,204,82,0.4)';
+          document.getElementById('diagForm').reset();
+        } else {
+          throw new Error('error');
+        }
+      } catch {
+        btn.innerHTML = `Reintentar`;
+        btn.disabled = false;
         btn.style.opacity = '1';
-        btn.style.background = '#00cc52';
-        btn.style.boxShadow = '0 0 40px rgba(0,204,82,0.4)';
-      }, 900);
+        btn.style.background = '';
+        btn.style.boxShadow = '';
+      }
     }
   </script>
 
