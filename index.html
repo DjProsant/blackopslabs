@@ -1825,12 +1825,16 @@
       video.play().catch(() => {});
 
     } else {
-      // ── DESKTOP: scroll scrubbing — video all-keyframe, seek directo ──
+      // ── DESKTOP: scroll scrubbing — seek chain pattern ──
+      // Nunca más de un seek activo a la vez; siempre salta al target más reciente.
+      // Sin este patrón los seeks se acumulan en cola y producen el efecto "1 FPS".
       let videoDuration = 0;
       let firstPainted  = false;
+      let seekPending   = false;   // hay un seek en vuelo
+      let pendingTarget = null;    // target bufferizado mientras hay seek activo
 
       section.style.height = (window.innerHeight * 4) + 'px';
-      fitCanvas(); // dimensionar canvas a píxeles físicos desde el inicio
+      fitCanvas();
 
       function hideLoader() {
         if (firstPainted) return;
@@ -1845,36 +1849,44 @@
         const vh = video.videoHeight || 720;
         const cw = canvas.width;
         const ch = canvas.height;
-        // Cover-fill: escala uniforme que rellena el canvas sin distorsión
         const s  = Math.max(cw / vw, ch / vh);
-        const dw = vw * s;
-        const dh = vh * s;
-        const dx = (cw - dw) / 2;
-        const dy = (ch - dh) / 2;
-        ctx.drawImage(video, dx, dy, dw, dh);
+        ctx.drawImage(video, (cw - vw*s)/2, (ch - vh*s)/2, vw*s, vh*s);
         hideLoader();
       }
 
-      // rVFC: bucle continuo — el navegador llama a draw() en cuanto
-      // tiene el frame decodificado, sin rAF extra ni timeupdate
+      // Lanza un seek solo si no hay uno activo; si lo hay, guarda el target
+      function seekTo(t) {
+        if (seekPending) { pendingTarget = t; return; }
+        seekPending = true;
+        video.currentTime = t;
+      }
+
+      // Cuando el seek termina: pinta el frame y lanza el siguiente si hay pendiente
+      video.addEventListener('seeked', () => {
+        draw();
+        seekPending = false;
+        if (pendingTarget !== null) {
+          const t = pendingTarget;
+          pendingTarget = null;
+          seekTo(t);
+        }
+      });
+
+      // rVFC: pinta cada frame nuevo que el browser decodifica (suaviza micro-gaps)
       if (hasRVFC) {
         (function rVFCLoop() {
           draw();
           video.requestVideoFrameCallback(rVFCLoop);
         })();
       } else {
-        // Fallback navegadores sin rVFC: timeupdate + rAF mientras hay seek activo
         video.addEventListener('timeupdate', draw);
-        video.addEventListener('seeking', function pumpRaf() {
-          (function raf() { draw(); if (video.seeking) requestAnimationFrame(raf); })();
-        });
       }
 
       function onMetadata() {
         if (!video.duration || video.duration === Infinity) return;
         videoDuration = video.duration;
-        fitCanvas(); // canvas a píxeles físicos, no a dimensiones del video
-        const usable  = videoDuration - VIDEO_START;
+        fitCanvas();
+        const usable = videoDuration - VIDEO_START;
         section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
         video.currentTime = VIDEO_START;
       }
@@ -1882,7 +1894,6 @@
       video.addEventListener('loadedmetadata', onMetadata);
       video.addEventListener('loadeddata',     onMetadata);
 
-      // Desbloquear autoplay y pausar — el scroll controla currentTime
       const _unlock = video.play();
       if (_unlock && _unlock.then) {
         _unlock.then(() => { video.pause(); video.currentTime = VIDEO_START; })
@@ -1897,15 +1908,9 @@
         const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
         const usable   = videoDuration - VIDEO_START;
 
-        // Seek directo — sin queue, sin isSeeking, sin fastSeek impreciso
-        // Con video all-keyframe el browser decodifica el frame exacto al instante
-        video.currentTime = VIDEO_START + progress * usable;
-
+        seekTo(VIDEO_START + progress * usable);
         fill.style.width = (progress * 100) + '%';
         badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
-
-        // Pinta el frame actual inmediatamente; rVFC actualizará cuando llegue el nuevo
-        draw();
       }
 
       window.addEventListener('scroll', onScroll, { passive: true });
