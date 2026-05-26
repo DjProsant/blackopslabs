@@ -1825,13 +1825,21 @@
       video.play().catch(() => {});
 
     } else {
-      // ── DESKTOP: scroll scrubbing — seek chain pattern ──
-      // Nunca más de un seek activo a la vez; siempre salta al target más reciente.
-      // Sin este patrón los seeks se acumulan en cola y producen el efecto "1 FPS".
+      // ── DESKTOP: seek chain + ImageBitmap cache progresivo ──
+      //
+      // Nivel 1 — seek chain: un seek activo a la vez, siempre al target más reciente
+      // Nivel 2 — frame cache: tras cada seek, el frame se guarda como ImageBitmap
+      //           (draw instantáneo en futuros scrolls al mismo punto)
+      // Nivel 3 — background cache: un video element oculto pre-decodifica TODOS
+      //           los frames en segundo plano usando idle time; cuando termina,
+      //           cualquier posición de scroll dibuja en 0 ms sin seek alguno
       let videoDuration = 0;
       let firstPainted  = false;
-      let seekPending   = false;   // hay un seek en vuelo
-      let pendingTarget = null;    // target bufferizado mientras hay seek activo
+      let seekPending   = false;
+      let pendingTarget = null;
+
+      const frameCache = new Map(); // frameIdx → ImageBitmap
+      const CACHE_FPS  = 24;
 
       section.style.height = (window.innerHeight * 4) + 'px';
       fitCanvas();
@@ -1843,27 +1851,46 @@
         setTimeout(() => { loader.style.display = 'none'; }, 420);
       }
 
-      function draw() {
-        if (video.readyState < 2 || canvas.width === 0 || canvas.height === 0) return;
-        const vw = video.videoWidth  || 1280;
-        const vh = video.videoHeight || 720;
-        const cw = canvas.width;
-        const ch = canvas.height;
-        const s  = Math.max(cw / vw, ch / vh);
-        ctx.drawImage(video, (cw - vw*s)/2, (ch - vh*s)/2, vw*s, vh*s);
+      function timeToIdx(t) {
+        return Math.round((t - VIDEO_START) * CACHE_FPS);
+      }
+
+      function coverDraw(source) {
+        if (!canvas.width || !canvas.height) return;
+        const sw = source.videoWidth  || source.width  || 1280;
+        const sh = source.videoHeight || source.height || 720;
+        const cw = canvas.width, ch = canvas.height;
+        const s  = Math.max(cw / sw, ch / sh);
+        ctx.drawImage(source, (cw - sw * s) / 2, (ch - sh * s) / 2, sw * s, sh * s);
         hideLoader();
       }
 
-      // Lanza un seek solo si no hay uno activo; si lo hay, guarda el target
+      function draw() {
+        if (video.readyState >= 2) coverDraw(video);
+      }
+
+      // seekTo: si el frame ya está en caché → dibuja en 0 ms.
+      // Si no → seek chain (un seek a la vez, siempre al target más reciente).
       function seekTo(t) {
+        const idx = timeToIdx(t);
+        if (frameCache.has(idx)) {
+          coverDraw(frameCache.get(idx)); // instantáneo
+          return;
+        }
         if (seekPending) { pendingTarget = t; return; }
         seekPending = true;
         video.currentTime = t;
       }
 
-      // Cuando el seek termina: pinta el frame y lanza el siguiente si hay pendiente
+      // Tras cada seek: pinta el frame y lo guarda en caché para futuros scrolls
       video.addEventListener('seeked', () => {
         draw();
+        const idx = timeToIdx(video.currentTime);
+        if (!frameCache.has(idx) && video.readyState >= 2) {
+          createImageBitmap(video)
+            .then(bmp => frameCache.set(idx, bmp))
+            .catch(() => {});
+        }
         seekPending = false;
         if (pendingTarget !== null) {
           const t = pendingTarget;
@@ -1872,12 +1899,8 @@
         }
       });
 
-      // rVFC: pinta cada frame nuevo que el browser decodifica (suaviza micro-gaps)
       if (hasRVFC) {
-        (function rVFCLoop() {
-          draw();
-          video.requestVideoFrameCallback(rVFCLoop);
-        })();
+        (function rVFCLoop() { draw(); video.requestVideoFrameCallback(rVFCLoop); })();
       } else {
         video.addEventListener('timeupdate', draw);
       }
@@ -1889,6 +1912,7 @@
         const usable = videoDuration - VIDEO_START;
         section.style.height = Math.max(window.innerHeight * 3, usable * 220) + 'px';
         video.currentTime = VIDEO_START;
+        startBackgroundCache(video.src, videoDuration);
       }
 
       video.addEventListener('loadedmetadata', onMetadata);
@@ -1900,6 +1924,48 @@
                .catch(() => { video.currentTime = VIDEO_START; });
       }
 
+      // ── BACKGROUND CACHE ──
+      // Video element separado para no interferir con el scrubbing principal.
+      // La misma URL usa la caché HTTP del browser: sin re-descarga.
+      // requestIdleCallback cede el hilo entre frames para no bloquear scroll.
+      async function startBackgroundCache(src, duration) {
+        const cv = document.createElement('video');
+        cv.muted  = true; cv.preload = 'auto'; cv.src = src;
+        cv.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:0;left:0;z-index:-1;';
+        document.body.appendChild(cv);
+        cv.load();
+
+        try {
+          await new Promise((res, rej) => {
+            cv.addEventListener('loadeddata', res, { once: true });
+            cv.addEventListener('error', rej, { once: true });
+            setTimeout(rej, 12000); // timeout de seguridad
+          });
+        } catch { cv.remove(); return; }
+
+        const totalFrames = Math.round((duration - VIDEO_START) * CACHE_FPS);
+
+        for (let i = 0; i <= totalFrames; i++) {
+          if (frameCache.has(i)) continue;
+
+          cv.currentTime = VIDEO_START + i / CACHE_FPS;
+          await new Promise(r => cv.addEventListener('seeked', r, { once: true }));
+
+          if (cv.readyState >= 2) {
+            try { frameCache.set(i, await createImageBitmap(cv)); } catch {}
+          }
+
+          // Cede el hilo cada 5 frames — permite que scroll y rAF respondan sin lag
+          if (i % 5 === 0) {
+            await new Promise(r => 'requestIdleCallback' in window
+              ? requestIdleCallback(r, { timeout: 300 })
+              : setTimeout(r, 0));
+          }
+        }
+
+        cv.remove();
+      }
+
       function onScroll() {
         if (!videoDuration) return;
         const rect     = section.getBoundingClientRect();
@@ -1907,7 +1973,6 @@
         const vh       = window.innerHeight;
         const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)));
         const usable   = videoDuration - VIDEO_START;
-
         seekTo(VIDEO_START + progress * usable);
         fill.style.width = (progress * 100) + '%';
         badge.classList.toggle('visible', rect.top <= 0 && rect.bottom >= vh);
