@@ -21,6 +21,10 @@
   <meta name="twitter:title" content="Black Ops Labs — Ingeniería Digital de Alta Precisión" />
   <meta name="twitter:description" content="Intervenimos la estructura digital de tu empresa para eliminar fugas de conversión, acelerar tu velocidad de carga y blindar tu backend." />
 
+  <!-- Security Headers (HTTP-level headers require Cloudflare — see setup guide) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://n8n.blackopslabs.it.com; frame-ancestors 'none';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -724,6 +728,55 @@
     }
 
     .nda-text strong { color: rgba(0, 255, 102, 0.55); font-weight: 500; }
+
+    /* RGPD CHECKBOX */
+    .rgpd-group {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .rgpd-checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
+    .rgpd-box {
+      width: 14px;
+      height: 14px;
+      min-width: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-top: 2px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .rgpd-checkbox:checked + .rgpd-box {
+      border-color: var(--accent);
+      background: rgba(0,255,102,0.1);
+    }
+    .rgpd-checkbox:checked + .rgpd-box::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      display: block;
+    }
+    .rgpd-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.55;
+      cursor: pointer;
+    }
+    .rgpd-label a { color: rgba(0,255,102,0.55); text-decoration: none; }
+    .rgpd-label a:hover { color: var(--accent); }
+    .rgpd-error {
+      font-size: 10px;
+      color: #FF4444;
+      margin-top: 5px;
+      display: none;
+      letter-spacing: 0.05em;
+    }
+    .rgpd-error.visible { display: block; }
 
     /* FOOTER */
     footer {
@@ -1646,6 +1699,26 @@
               </div>
             </div>
 
+            <!-- Honeypot anti-bot: campo invisible para humanos, bots lo rellenan -->
+            <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+              <label for="website_confirm">Leave this field empty</label>
+              <input type="text" id="website_confirm" name="website_confirm" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <!-- RGPD -->
+            <div class="rgpd-group">
+              <input type="checkbox" class="rgpd-checkbox" id="rgpd" name="rgpd" />
+              <label class="rgpd-box" for="rgpd"></label>
+              <div>
+                <label class="rgpd-label" for="rgpd">
+                  He leído y acepto que mis datos serán tratados conforme a la
+                  <a href="https://www.blackopslabs.it.com/privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
+                  La información es tratada con absoluta discreción y no se comparte con terceros.
+                </label>
+                <div class="rgpd-error" id="rgpdError">Debes aceptar la política de privacidad para continuar.</div>
+              </div>
+            </div>
+
             <button type="submit" class="btn-submit" id="submitBtn">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                 <path d="M1 6.5H12M6.5 1L12 6.5L6.5 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
@@ -2003,6 +2076,17 @@
     async function handleSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
+
+      // Anti-bot: si el honeypot tiene valor, es un bot — ignorar silenciosamente
+      if (document.getElementById('website_confirm').value) return;
+
+      // RGPD: requerir consentimiento explícito
+      if (!document.getElementById('rgpd').checked) {
+        document.getElementById('rgpdError').classList.add('visible');
+        return;
+      }
+      document.getElementById('rgpdError').classList.remove('visible');
+
       const empresa  = document.getElementById('empresa').value.trim();
       const url      = document.getElementById('url').value.trim();
       const email    = document.getElementById('email').value.trim();
@@ -2013,7 +2097,7 @@
       btn.style.opacity = '0.72';
 
       try {
-        const res = await fetch('http://localhost:5678/webhook/diagnostico-emergencia', {
+        const res = await fetch('https://n8n.blackopslabs.it.com/webhook/diagnostico-emergencia', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ empresa, url, email, whatsapp: whatsapp || '—' })

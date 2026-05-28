@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /assets/
+Allow: /
+
+Sitemap: https://www.blackopslabs.it.com/sitemap.xml
