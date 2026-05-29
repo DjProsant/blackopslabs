@@ -280,7 +280,7 @@ function closeMobileMenu() {
 // ── FORM SUBMIT ──
 // FASE 3: X-Webhook-Secret — configura este mismo valor en el nodo Webhook de n8n
 // (Header name: X-Webhook-Secret, Header value: el valor que pongas aquí)
-const WEBHOOK_SECRET = 'REEMPLAZA_ESTE_VALOR_CON_TU_SECRET';
+const WEBHOOK_SECRET = '[SECRET_ROTADO]';
 
 async function handleSubmit(e) {
   e.preventDefault();
