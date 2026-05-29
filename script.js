@@ -278,9 +278,10 @@ function closeMobileMenu() {
 }
 
 // ── FORM SUBMIT ──
-// FASE 3: X-Webhook-Secret — configura este mismo valor en el nodo Webhook de n8n
-// (Header name: X-Webhook-Secret, Header value: el valor que pongas aquí)
-const WEBHOOK_SECRET = '[SECRET_ROTADO]';
+// NOTA DE SEGURIDAD: cualquier valor aquí es público (JavaScript del cliente es visible).
+// Protección real = rate limiting en Cloudflare WAF, no un secreto en JS.
+// Este header solo evita envíos accidentales desde fuera del formulario.
+const WEBHOOK_SECRET = '2256f9b9340d82265cf8b7fe7c1e85a86dae2e776bd3b49802e0b165cce69f69';
 
 async function handleSubmit(e) {
   e.preventDefault();
