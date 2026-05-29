@@ -278,10 +278,6 @@ function closeMobileMenu() {
 }
 
 // ── FORM SUBMIT ──
-// NOTA DE SEGURIDAD: cualquier valor aquí es público (JavaScript del cliente es visible).
-// Protección real = rate limiting en Cloudflare WAF, no un secreto en JS.
-// Este header solo evita envíos accidentales desde fuera del formulario.
-const WEBHOOK_SECRET = '2256f9b9340d82265cf8b7fe7c1e85a86dae2e776bd3b49802e0b165cce69f69';
 
 async function handleSubmit(e) {
   e.preventDefault();
@@ -308,8 +304,7 @@ async function handleSubmit(e) {
     const res = await fetch('https://n8n.blackopslabs.it.com/webhook/diagnostico-emergencia', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Secret': WEBHOOK_SECRET
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ empresa, url, email, whatsapp: whatsapp || '—' })
     });
