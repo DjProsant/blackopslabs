@@ -277,19 +277,27 @@ function closeMobileMenu() {
   navMobileEl.setAttribute('aria-hidden', 'true');
 }
 
+// ── CLOUDFLARE TURNSTILE ──
+let cfTurnstileToken = null;
+function onTurnstileVerified(token) { cfTurnstileToken = token; }
+
 // ── FORM SUBMIT ──
 
 async function handleSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
 
-  if (document.getElementById('website_confirm').value) return;
-
   if (!document.getElementById('rgpd').checked) {
     document.getElementById('rgpdError').classList.add('visible');
     return;
   }
   document.getElementById('rgpdError').classList.remove('visible');
+
+  const token = cfTurnstileToken || (typeof turnstile !== 'undefined' && turnstile.getResponse());
+  if (!token) {
+    if (typeof turnstile !== 'undefined') turnstile.execute();
+    return;
+  }
 
   const empresa  = document.getElementById('empresa').value.trim();
   const url      = document.getElementById('url').value.trim();
@@ -303,10 +311,8 @@ async function handleSubmit(e) {
   try {
     const res = await fetch('https://n8n.blackopslabs.it.com/webhook/diagnostico-emergencia', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ empresa, url, email, whatsapp: whatsapp || '—' })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empresa, url, email, whatsapp: whatsapp || '—', cf_turnstile_response: token })
     });
 
     if (res.ok) {
@@ -315,6 +321,7 @@ async function handleSubmit(e) {
       btn.style.background = '#00cc52';
       btn.style.boxShadow = '0 0 40px rgba(0,204,82,0.4)';
       document.getElementById('diagForm').reset();
+      if (typeof turnstile !== 'undefined') { turnstile.reset(); cfTurnstileToken = null; }
     } else {
       throw new Error('error');
     }
@@ -324,6 +331,7 @@ async function handleSubmit(e) {
     btn.style.opacity = '1';
     btn.style.background = '';
     btn.style.boxShadow = '';
+    if (typeof turnstile !== 'undefined') { turnstile.reset(); cfTurnstileToken = null; }
     setTimeout(() => {
       btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 6.5H12M6.5 1L12 6.5L6.5 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg> Ejecutar Diagnóstico`;
     }, 3000);

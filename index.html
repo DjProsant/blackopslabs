@@ -30,6 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -384,11 +385,11 @@
               </div>
             </div>
 
-            <!-- Honeypot anti-bot -->
-            <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
-              <label for="website_confirm">Leave this field empty</label>
-              <input type="text" id="website_confirm" name="website_confirm" tabindex="-1" autocomplete="off" />
-            </div>
+            <!-- Cloudflare Turnstile invisible -->
+            <div class="cf-turnstile"
+                 data-sitekey="0x4AAAAAADYsYza6kCi06dJE"
+                 data-callback="onTurnstileVerified"
+                 data-size="invisible"></div>
 
             <!-- RGPD -->
             <div class="rgpd-group">
