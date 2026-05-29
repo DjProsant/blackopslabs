@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidad — Black Ops Labs</title>
+  <meta name="description" content="Política de Privacidad de Black Ops Labs. Información sobre el tratamiento de tus datos personales conforme al RGPD." />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2308080A'/%3E%3Crect x='8' y='8' width='16' height='16' fill='none' stroke='%2300FF66' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%2300FF66'/%3E%3C/svg%3E"/>
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none';">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Estilos específicos de la página de privacidad */
+    .privacy-page {
+      padding-top: 60px;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .privacy-hero {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .privacy-eyebrow::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: rgba(0, 255, 102, 0.4);
+    }
+
+    .privacy-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .privacy-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .privacy-meta-item {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .privacy-meta-item::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .privacy-content {
+      padding: 64px 0;
+      max-width: 760px;
+    }
+
+    .privacy-toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      margin-bottom: 48px;
+      position: relative;
+    }
+
+    .privacy-toc::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0.4;
+    }
+
+    .privacy-toc-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .privacy-toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+
+    .privacy-toc ol li {
+      counter-increment: toc-counter;
+      margin-bottom: 8px;
+    }
+
+    .privacy-toc ol li::before {
+      content: counter(toc-counter, decimal-leading-zero) '. ';
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .privacy-toc a {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .privacy-toc a:hover { color: var(--text-primary); }
+
+    .privacy-section {
+      margin-bottom: 48px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-section:last-child {
+      border-bottom: none;
+    }
+
+    .privacy-section-num {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .privacy-section-num::after {
+      content: '';
+      flex: 1;
+      max-width: 40px;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .privacy-section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+
+    .privacy-section p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 14px;
+    }
+
+    .privacy-section p:last-child { margin-bottom: 0; }
+
+    .privacy-section ul, .privacy-section ol {
+      margin: 14px 0;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .privacy-section ul li, .privacy-section ol li {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.72;
+      padding: 6px 0 6px 20px;
+      position: relative;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .privacy-section ul li::before {
+      content: '//';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 600;
+      top: 9px;
+    }
+
+    .privacy-section ol {
+      counter-reset: list-counter;
+    }
+
+    .privacy-section ol li {
+      counter-increment: list-counter;
+    }
+
+    .privacy-section ol li::before {
+      content: counter(list-counter) '.';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      top: 8px;
+    }
+
+    .privacy-highlight {
+      background: var(--accent-dim);
+      border: 1px solid rgba(0, 255, 102, 0.15);
+      border-left: 2px solid var(--accent);
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+
+    .privacy-highlight p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .privacy-highlight strong {
+      color: rgba(0, 255, 102, 0.7);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      background: rgba(0, 255, 102, 0.05);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .data-table td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      vertical-align: top;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .rights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    .right-card {
+      background: var(--bg-card);
+      padding: 20px;
+    }
+
+    .right-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .right-card p {
+      font-size: 12px !important;
+      margin: 0 !important;
+    }
+
+    .contact-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      position: relative;
+    }
+
+    .contact-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.3;
+    }
+
+    .contact-panel p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.72;
+      margin-bottom: 8px;
+    }
+
+    .contact-panel a {
+      color: rgba(0, 255, 102, 0.65);
+      text-decoration: none;
+    }
+
+    .contact-panel a:hover { color: var(--accent); }
+
+    .placeholder-note {
+      background: rgba(255, 200, 0, 0.06);
+      border: 1px solid rgba(255, 200, 0, 0.2);
+      border-left: 2px solid rgba(255, 200, 0, 0.5);
+      padding: 10px 14px;
+      margin: 8px 0;
+      font-size: 11px;
+      color: rgba(255, 200, 0, 0.7);
+      letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 768px) {
+      .rights-grid { grid-template-columns: 1fr; }
+      .data-table { font-size: 12px; }
+      .data-table th, .data-table td { padding: 8px 10px; }
+      .privacy-content { padding: 40px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="radial-glow"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"></div>
+      <span class="nav-logo-text">Black Ops Labs</span>
+    </a>
+    <div class="nav-links">
+      <a href="/#operaciones" class="nav-link">Operaciones</a>
+      <a href="/#diagnostico" class="nav-link primary">Diagnóstico</a>
+    </div>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      <span>Sistema Activo</span>
+    </div>
+  </nav>
+
+  <main class="privacy-page">
+    <div class="wrapper">
+
+      <div class="privacy-hero">
+        <div class="privacy-eyebrow">Legal // RGPD</div>
+        <h1 class="privacy-title">Política de Privacidad</h1>
+        <p style="font-size:14px;color:var(--text-secondary);max-width:560px;line-height:1.72;margin-top:12px;">
+          Información sobre el tratamiento de tus datos personales por parte de Black Ops Labs,
+          conforme al Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).
+        </p>
+        <div class="privacy-meta">
+          <span class="privacy-meta-item">Última actualización: 28 de mayo de 2026</span>
+          <span class="privacy-meta-item">Versión: 1.0</span>
+          <span class="privacy-meta-item">Ámbito: blackopslabs.it.com</span>
+        </div>
+      </div>
+
+      <div class="privacy-content">
+
+        <!-- ÍNDICE -->
+        <div class="privacy-toc">
+          <div class="privacy-toc-title">// Índice de contenidos</div>
+          <ol>
+            <li><a href="#responsable">Responsable del tratamiento</a></li>
+            <li><a href="#datos">Datos que recopilamos</a></li>
+            <li><a href="#finalidad">Finalidad y base legal del tratamiento</a></li>
+            <li><a href="#conservacion">Plazo de conservación</a></li>
+            <li><a href="#destinatarios">Destinatarios y cesiones</a></li>
+            <li><a href="#transferencias">Transferencias internacionales</a></li>
+            <li><a href="#derechos">Tus derechos</a></li>
+            <li><a href="#cookies">Cookies y tecnologías de rastreo</a></li>
+            <li><a href="#seguridad">Medidas de seguridad</a></li>
+            <li><a href="#contacto">Contacto y reclamaciones</a></li>
+          </ol>
+        </div>
+
+        <!-- 1. RESPONSABLE -->
+        <div class="privacy-section" id="responsable">
+          <div class="privacy-section-num">01</div>
+          <h2>Responsable del Tratamiento</h2>
+          <div class="contact-panel">
+            <p><strong style="color:var(--text-primary);">Denominación:</strong> Black Ops Labs</p>
+            <div class="placeholder-note">
+              ⚠ COMPLETAR: Nombre legal completo / razón social de la empresa
+            </div>
+            <p><strong style="color:var(--text-primary);">CIF/NIF:</strong>
+              <span style="color:rgba(255,200,0,0.7);">[COMPLETAR con tu CIF o NIF]</span>
+            </p>
+            <p><strong style="color:var(--text-primary);">Domicilio social:</strong>
+              <span style="color:rgba(255,200,0,0.7);">[COMPLETAR con la dirección postal]</span>
+            </p>
+            <p><strong style="color:var(--text-primary);">Email de contacto:</strong>
+              <a href="mailto:privacidad@blackopslabs.it.com">[COMPLETAR con tu email de privacidad]</a>
+            </p>
+            <p><strong style="color:var(--text-primary);">Sitio web:</strong>
+              <a href="https://www.blackopslabs.it.com">https://www.blackopslabs.it.com</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. DATOS -->
+        <div class="privacy-section" id="datos">
+          <div class="privacy-section-num">02</div>
+          <h2>Datos que Recopilamos</h2>
+          <p>
+            A través del formulario de solicitud de diagnóstico disponible en nuestro sitio web,
+            recopilamos los siguientes datos personales:
+          </p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Tipo de dato</th>
+                <th>Obligatorio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Nombre de la empresa</td>
+                <td>Dato de la entidad (no personal directo)</td>
+                <td>Sí</td>
+              </tr>
+              <tr>
+                <td>URL de la plataforma</td>
+                <td>Dato técnico / identificador</td>
+                <td>Sí</td>
+              </tr>
+              <tr>
+                <td>Email de contacto</td>
+                <td>Dato personal de contacto</td>
+                <td>Sí</td>
+              </tr>
+              <tr>
+                <td>Número de WhatsApp</td>
+                <td>Dato personal de contacto (teléfono)</td>
+                <td>No</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            No recopilamos datos especialmente protegidos (categorías especiales según Art. 9 RGPD)
+            ni datos de menores de 14 años. Si eres menor de 14 años, no uses este formulario.
+          </p>
+        </div>
+
+        <!-- 3. FINALIDAD Y BASE LEGAL -->
+        <div class="privacy-section" id="finalidad">
+          <div class="privacy-section-num">03</div>
+          <h2>Finalidad y Base Legal del Tratamiento</h2>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Finalidad</th>
+                <th>Base legal (Art. 6 RGPD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Gestionar tu solicitud de diagnóstico técnico gratuito y enviarte el informe de resultados</td>
+                <td>Art. 6.1.b — Ejecución de un contrato o medidas precontractuales a petición del interesado</td>
+              </tr>
+              <tr>
+                <td>Contactarte por email o WhatsApp para la entrega del diagnóstico y seguimiento comercial</td>
+                <td>Art. 6.1.a — Consentimiento del interesado (checkbox RGPD del formulario)</td>
+              </tr>
+              <tr>
+                <td>Cumplimiento de obligaciones legales (facturación, contabilidad si se contrata el servicio)</td>
+                <td>Art. 6.1.c — Cumplimiento de una obligación legal</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="privacy-highlight">
+            <p>
+              <strong>Derecho a retirar el consentimiento:</strong> Puedes retirar tu consentimiento en cualquier
+              momento sin que ello afecte a la licitud del tratamiento basado en el consentimiento previo a su retirada.
+              Para ello, contáctanos en la dirección indicada en la sección 10.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4. PLAZO DE CONSERVACIÓN -->
+        <div class="privacy-section" id="conservacion">
+          <div class="privacy-section-num">04</div>
+          <h2>Plazo de Conservación</h2>
+          <p>
+            Conservamos tus datos personales durante el tiempo estrictamente necesario para las
+            finalidades descritas y, posteriormente, durante los plazos legalmente exigidos:
+          </p>
+          <ul>
+            <li>
+              <strong style="color:var(--text-primary);">Datos de solicitud de diagnóstico:</strong>
+              Se conservan durante la prestación del servicio y hasta 3 años después de la
+              última interacción, para atender posibles reclamaciones.
+            </li>
+            <li>
+              <strong style="color:var(--text-primary);">Datos de facturación (si aplica):</strong>
+              5 años conforme a la Ley 58/2003 General Tributaria.
+            </li>
+            <li>
+              <strong style="color:var(--text-primary);">Datos de contacto comercial:</strong>
+              Hasta que retires el consentimiento o solicites la supresión.
+            </li>
+          </ul>
+          <p>
+            Transcurridos estos plazos, los datos serán eliminados o anonimizados de forma segura.
+          </p>
+        </div>
+
+        <!-- 5. DESTINATARIOS -->
+        <div class="privacy-section" id="destinatarios">
+          <div class="privacy-section-num">05</div>
+          <h2>Destinatarios y Cesiones</h2>
+          <p>
+            <strong style="color:var(--text-primary);">No cedemos tus datos personales a terceros</strong>
+            con fines propios, salvo obligación legal.
+          </p>
+          <p>
+            Para prestar el servicio, utilizamos los siguientes encargados de tratamiento que
+            actúan bajo nuestras instrucciones y con las garantías adecuadas:
+          </p>
+          <ul>
+            <li>
+              <strong style="color:var(--text-primary);">n8n (automatización de flujos):</strong>
+              Plataforma de automatización alojada en infraestructura propia, utilizada para
+              procesar y enrutar las solicitudes de diagnóstico.
+            </li>
+            <li>
+              <strong style="color:var(--text-primary);">Proveedor de email:</strong>
+              Utilizado para enviarte el informe de diagnóstico.
+              <span style="color:rgba(255,200,0,0.7);">[COMPLETAR: nombre del proveedor de email, ej. Google Workspace, Brevo, etc.]</span>
+            </li>
+            <li>
+              <strong style="color:var(--text-primary);">Cloudflare:</strong>
+              CDN y proxy de seguridad que gestiona el tráfico hacia nuestro sitio web.
+              Puede procesar tu dirección IP de forma transitoria.
+              Política de privacidad: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">cloudflare.com/privacypolicy</a>
+            </li>
+            <li>
+              <strong style="color:var(--text-primary);">GitHub (Pages):</strong>
+              Aloja el sitio web estático. No procesa tus datos de formulario.
+            </li>
+          </ul>
+        </div>
+
+        <!-- 6. TRANSFERENCIAS INTERNACIONALES -->
+        <div class="privacy-section" id="transferencias">
+          <div class="privacy-section-num">06</div>
+          <h2>Transferencias Internacionales</h2>
+          <p>
+            Con carácter general, no realizamos transferencias de datos personales a países
+            fuera del Espacio Económico Europeo (EEE).
+          </p>
+          <p>
+            Cloudflare, Inc. tiene sede en EE.UU. y puede procesar datos en servidores fuera del EEE.
+            Cloudflare está acogido a las Cláusulas Contractuales Tipo (CCT) aprobadas por la
+            Comisión Europea como garantía adecuada conforme al Art. 46 RGPD.
+          </p>
+          <div class="placeholder-note">
+            ⚠ COMPLETAR: Si tu proveedor de email u otras herramientas transfieren datos fuera del EEE,
+            indícalo aquí junto con la garantía aplicable (CCT, decisión de adecuación, etc.).
+          </div>
+        </div>
+
+        <!-- 7. DERECHOS -->
+        <div class="privacy-section" id="derechos">
+          <div class="privacy-section-num">07</div>
+          <h2>Tus Derechos</h2>
+          <p>
+            Como interesado, tienes derecho a ejercer en cualquier momento los siguientes derechos
+            ante el responsable del tratamiento:
+          </p>
+          <div class="rights-grid">
+            <div class="right-card">
+              <div class="right-card-title">Acceso</div>
+              <p>Obtener confirmación de si tratamos tus datos y acceder a ellos.</p>
+            </div>
+            <div class="right-card">
+              <div class="right-card-title">Rectificación</div>
+              <p>Corregir datos inexactos o incompletos.</p>
+            </div>
+            <div class="right-card">
+              <div class="right-card-title">Supresión</div>
+              <p>Solicitar la eliminación de tus datos cuando ya no sean necesarios.</p>
+            </div>
+            <div class="right-card">
+              <div class="right-card-title">Oposición</div>
+              <p>Oponerte al tratamiento basado en nuestro interés legítimo.</p>
+            </div>
+            <div class="right-card">
+              <div class="right-card-title">Limitación</div>
+              <p>Solicitar que se restrinja el tratamiento en determinadas circunstancias.</p>
+            </div>
+            <div class="right-card">
+              <div class="right-card-title">Portabilidad</div>
+              <p>Recibir tus datos en formato estructurado y legible por máquina.</p>
+            </div>
+          </div>
+          <p style="margin-top:20px;">
+            Para ejercer cualquiera de estos derechos, envía un email a
+            <a href="mailto:privacidad@blackopslabs.it.com" style="color:rgba(0,255,102,0.65);">
+              [COMPLETAR: tu email de privacidad]
+            </a>
+            indicando el derecho que deseas ejercer, adjuntando una copia de tu DNI u
+            otro documento identificativo.
+          </p>
+          <p>
+            Responderemos en el plazo máximo de un mes (ampliable a tres meses en casos complejos).
+          </p>
+        </div>
+
+        <!-- 8. COOKIES -->
+        <div class="privacy-section" id="cookies">
+          <div class="privacy-section-num">08</div>
+          <h2>Cookies y Tecnologías de Rastreo</h2>
+          <p>
+            Nuestro sitio web no instala cookies propias de seguimiento ni analítica de terceros.
+          </p>
+          <p>
+            El CDN Cloudflare puede establecer cookies técnicas necesarias para la seguridad y
+            rendimiento del servicio (<code style="color:var(--accent);font-size:12px;">__cf_bm</code>,
+            <code style="color:var(--accent);font-size:12px;">cf_clearance</code>).
+            Estas cookies son esenciales y no requieren consentimiento bajo la directiva ePrivacy.
+          </p>
+          <p>
+            Las fuentes tipográficas se cargan desde Google Fonts (Google LLC). Google puede
+            registrar la dirección IP del visitante para servir el recurso. Consulta la
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+               style="color:rgba(0,255,102,0.65);">política de privacidad de Google</a> para más información.
+          </p>
+          <div class="placeholder-note">
+            ⚠ RECOMENDACIÓN: Para eliminar la dependencia de Google Fonts, auto-hospeda la fuente Inter
+            en el repositorio (ver punto 10 del plan de acción del informe de seguridad).
+          </div>
+        </div>
+
+        <!-- 9. SEGURIDAD -->
+        <div class="privacy-section" id="seguridad">
+          <div class="privacy-section-num">09</div>
+          <h2>Medidas de Seguridad</h2>
+          <p>
+            Aplicamos medidas técnicas y organizativas apropiadas para garantizar un nivel de
+            seguridad adecuado al riesgo conforme al Art. 32 RGPD:
+          </p>
+          <ul>
+            <li>Cifrado HTTPS/TLS 1.2+ en todas las comunicaciones (certificado Let's Encrypt)</li>
+            <li>HSTS con preload para prevenir ataques de degradación de protocolo</li>
+            <li>Cabeceras de seguridad HTTP (X-Frame-Options, X-Content-Type-Options, etc.)</li>
+            <li>Protección perimetral mediante Cloudflare (WAF, DDoS mitigation)</li>
+            <li>Acceso restringido al sistema de automatización (n8n) mediante autenticación</li>
+            <li>Los datos del formulario se transmiten directamente al sistema de automatización
+                interno sin ser almacenados en servidores web públicos</li>
+          </ul>
+          <p>
+            En caso de brecha de seguridad que afecte a tus datos personales y suponga un riesgo
+            para tus derechos y libertades, te notificaremos en el plazo de 72 horas desde que
+            tengamos conocimiento de ella, conforme al Art. 33-34 RGPD.
+          </p>
+        </div>
+
+        <!-- 10. CONTACTO -->
+        <div class="privacy-section" id="contacto">
+          <div class="privacy-section-num">10</div>
+          <h2>Contacto y Reclamaciones</h2>
+          <p>Para cualquier consulta relacionada con el tratamiento de tus datos personales:</p>
+          <div class="contact-panel" style="margin-bottom:20px;">
+            <p>
+              <strong style="color:var(--text-primary);">Email de privacidad:</strong>
+              <a href="mailto:privacidad@blackopslabs.it.com">
+                [COMPLETAR: tu email de privacidad, ej. privacidad@blackopslabs.it.com]
+              </a>
+            </p>
+            <p>
+              <strong style="color:var(--text-primary);">Plazo de respuesta:</strong>
+              Máximo 30 días hábiles desde la recepción de tu solicitud.
+            </p>
+          </div>
+          <p>
+            Si consideras que el tratamiento de tus datos no es conforme a la normativa,
+            tienes derecho a presentar una reclamación ante la autoridad de control competente:
+          </p>
+          <div class="privacy-highlight">
+            <p>
+              <strong>Agencia Española de Protección de Datos (AEPD)</strong><br/>
+              C/ Jorge Juan, 6 — 28001 Madrid<br/>
+              <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer"
+                 style="color:rgba(0,255,102,0.65);">www.aepd.es</a>
+              &nbsp;·&nbsp; Tel.: 901 100 099
+            </p>
+          </div>
+          <p style="margin-top:24px;font-size:13px;color:var(--text-tertiary);">
+            Nos reservamos el derecho a modificar esta política de privacidad para adaptarla
+            a cambios legislativos o de nuestros servicios. Las modificaciones serán publicadas
+            en esta página con la fecha de actualización correspondiente.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrapper">
+      <div class="footer-inner">
+        <div class="footer-left">
+          <div class="f-logo-icon"></div>
+          <div class="footer-divider"></div>
+          <span class="footer-copy">© 2026 Black Ops Labs. Todos los derechos reservados.</span>
+        </div>
+        <div class="footer-badge">
+          <span class="footer-badge-dot"></span>
+          blackopslabs.it.com
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
